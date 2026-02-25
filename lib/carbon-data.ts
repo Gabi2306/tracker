@@ -98,18 +98,18 @@ export function calculateTransportEmissions(modeId: string, distanceKm: number):
 
 export function getTransportEfficiency(modeId: string): string {
   const mode = TRANSPORT_MODES.find((m) => m.id === modeId)
-  if (!mode) return "Unknown"
-  if (mode.emissionFactor === 0) return "Zero emissions"
-  if (mode.emissionFactor < 0.1) return "Low (" + mode.emissionFactor * 1000 + "g/km)"
-  return "Average (" + mode.emissionFactor * 1000 + "g/km)"
+  if (!mode) return "Desconocido"
+  if (mode.emissionFactor === 0) return "cero emisiones"
+  if (mode.emissionFactor < 0.1) return "Bajo (" + mode.emissionFactor * 1000 + "g/km)"
+  return "Promedio (" + mode.emissionFactor * 1000 + "g/km)"
 }
 
 export function getTransportComparison(modeId: string): string {
   const mode = TRANSPORT_MODES.find((m) => m.id === modeId)
   if (!mode) return ""
   const busMode = TRANSPORT_MODES.find((m) => m.id === "bus")!
-  if (mode.emissionFactor === 0) return "100% lower than bus avg"
+  if (mode.emissionFactor === 0) return "100 % menos que el promedio de los buses"
   const diff = ((mode.emissionFactor - busMode.emissionFactor) / busMode.emissionFactor) * 100
-  if (diff > 0) return Math.round(diff) + "% higher than bus avg"
-  return Math.abs(Math.round(diff)) + "% lower than bus avg"
+  if (diff > 0) return Math.round(diff) + "% mas que el promedio de los buses"
+  return Math.abs(Math.round(diff)) + "% menos que el promedio de los buses"
 }
