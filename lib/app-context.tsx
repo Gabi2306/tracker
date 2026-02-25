@@ -47,6 +47,11 @@ function mapSupabaseUser(su: SupabaseUser, profileName?: string): User {
   }
 }
 
+// Verificar si Supabase esta configurado correctamente
+function isSupabaseConfigured(): boolean {
+  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+}
+
 // Crear el cliente una sola vez fuera del componente
 const supabase = createClient()
 
@@ -84,6 +89,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (initRef.current) return
     initRef.current = true
+
+    // Si Supabase no esta configurado, no intentar autenticar
+    if (!isSupabaseConfigured()) {
+      setLoading(false)
+      return
+    }
 
     async function init() {
       try {

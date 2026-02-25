@@ -73,13 +73,11 @@
   }
 }
 
-/* Custom scrollbar for mobile feel */
 ::-webkit-scrollbar {
   width: 0px;
   background: transparent;
 }
 
-/* Safe area for mobile */
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

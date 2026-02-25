@@ -1,4 +1,3 @@
--- Create profiles table linked to auth.users
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   name text not null,

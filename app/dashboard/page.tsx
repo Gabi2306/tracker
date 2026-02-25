@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useApp } from "@/lib/app-context"
 import { EmissionsRing } from "@/components/emissions-ring"
@@ -19,6 +20,12 @@ export default function DashboardPage() {
     getRecentActivities,
   } = useApp()
 
+  useEffect(() => {
+    if (!isLoggedIn) {
+      router.replace("/")
+    }
+  }, [isLoggedIn, router])
+
   if (!isLoggedIn) return null
 
   const todayEmissions = getTodayEmissions()
@@ -29,8 +36,6 @@ export default function DashboardPage() {
   const percentChange = yesterdayEmissions > 0
     ? Math.round(((yesterdayEmissions - todayEmissions) / yesterdayEmissions) * 100)
     : 0
-
-  const isOnTrack = todayEmissions < 15
 
   function getGreeting() {
     const hour = new Date().getHours()
@@ -70,15 +75,6 @@ export default function DashboardPage() {
 
         {/* Anillo de emisiones */}
         <div className="relative mb-6 flex flex-col items-center rounded-2xl bg-card px-6 py-6">
-          <div className="absolute right-4 top-4">
-            <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${
-              isOnTrack
-                ? "bg-accent/20 text-accent"
-                : "bg-destructive/20 text-destructive"
-            }`}>
-              {isOnTrack ? "En meta" : "Alto"}
-            </span>
-          </div>
           <EmissionsRing value={todayEmissions} />
           <p className="mt-3 text-sm text-muted-foreground">Emisiones totales de hoy</p>
           {percentChange > 0 && (

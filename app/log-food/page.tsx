@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useApp } from "@/lib/app-context"
 import { FOOD_DATABASE, calculateFoodEmissions } from "@/lib/carbon-data"
@@ -23,8 +23,16 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 
 export default function LogFoodPage() {
   const router = useRouter()
-  const { addActivity } = useApp()
+  const { addActivity, isLoggedIn } = useApp()
   const [searchQuery, setSearchQuery] = useState("")
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      router.replace("/")
+    }
+  }, [isLoggedIn, router])
+
+  if (!isLoggedIn) return null
   const [selectedFood, setSelectedFood] = useState<string | null>(null)
   const [portionUnit, setPortionUnit] = useState<PortionUnit>("grams")
   const [portionAmount, setPortionAmount] = useState(250)

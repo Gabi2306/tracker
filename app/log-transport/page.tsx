@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useApp } from "@/lib/app-context"
 import {
@@ -75,8 +75,16 @@ type DistanceUnit = "km" | "mi"
 
 export default function LogTransportPage() {
   const router = useRouter()
-  const { addActivity } = useApp()
+  const { addActivity, isLoggedIn } = useApp()
   const [selectedMode, setSelectedMode] = useState<string | null>("car")
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      router.replace("/")
+    }
+  }, [isLoggedIn, router])
+
+  if (!isLoggedIn) return null
   const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>("km")
   const [distance, setDistance] = useState(12.5)
   const [gpsEnabled, setGpsEnabled] = useState(false)

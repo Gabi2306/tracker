@@ -1,4 +1,3 @@
--- Auto-create profile when a new user signs up
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql

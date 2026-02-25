@@ -1,84 +1,80 @@
-// Carbon emission factors based on international standards (IPCC, EPA, DEFRA)
-// All values in kg CO2e per unit
-
 export interface FoodItem {
   id: string
   name: string
   emoji: string
-  emissionFactor: number // kg CO2e per kg of food
+  emissionFactor: number // kg CO2e por kg de comida
   category: string
 }
 
-// Source: IPCC 2019, Our World in Data, DEFRA 2023
 export const FOOD_DATABASE: FoodItem[] = [
-  // High emissions (Red meats)
-  { id: "beef-steak", name: "Beef Steak", emoji: "steak", emissionFactor: 27.0, category: "Meat" },
-  { id: "lamb", name: "Lamb", emoji: "meat", emissionFactor: 24.0, category: "Meat" },
-  { id: "beef-ground", name: "Ground Beef", emoji: "meat", emissionFactor: 27.0, category: "Meat" },
+  // Emisiones altas (Carnes rojas)
+  { id: "carne", name: "Carne", emoji: "steak", emissionFactor: 27.0, category: "Meat" },
+  { id: "cordero", name: "Cordero", emoji: "meat", emissionFactor: 24.0, category: "Meat" },
+  { id: "carne-molida", name: "Carne molida", emoji: "meat", emissionFactor: 27.0, category: "Meat" },
   
-  // Medium-high emissions (Other meats)
-  { id: "pork", name: "Pork", emoji: "meat", emissionFactor: 12.1, category: "Meat" },
-  { id: "chicken", name: "Chicken", emoji: "poultry", emissionFactor: 6.9, category: "Meat" },
-  { id: "turkey", name: "Turkey", emoji: "poultry", emissionFactor: 5.5, category: "Meat" },
+  // Emisiones moderadas (Aves y cerdo)
+  { id: "cerdo", name: "Cerdo", emoji: "meat", emissionFactor: 12.1, category: "Meat" },
+  { id: "pollo", name: "Pollo", emoji: "poultry", emissionFactor: 6.9, category: "Meat" },
+  { id: "pavo", name: "Pavo", emoji: "poultry", emissionFactor: 5.5, category: "Meat" },
   
-  // Seafood
-  { id: "shrimp", name: "Shrimp", emoji: "seafood", emissionFactor: 11.8, category: "Seafood" },
-  { id: "fish", name: "Fish (generic)", emoji: "fish", emissionFactor: 5.4, category: "Seafood" },
+  // mariscos
+  { id: "camaron", name: "Camaron", emoji: "seafood", emissionFactor: 11.8, category: "Seafood" },
+  { id: "pescado", name: "Pescado (general)", emoji: "fish", emissionFactor: 5.4, category: "Seafood" },
   { id: "salmon", name: "Salmon", emoji: "fish", emissionFactor: 6.0, category: "Seafood" },
-  { id: "tuna", name: "Tuna", emoji: "fish", emissionFactor: 6.1, category: "Seafood" },
+  { id: "atun", name: "Atun", emoji: "fish", emissionFactor: 6.1, category: "Seafood" },
   
-  // Dairy
-  { id: "cheese", name: "Cheese", emoji: "dairy", emissionFactor: 13.5, category: "Dairy" },
-  { id: "milk", name: "Milk (1L)", emoji: "dairy", emissionFactor: 3.2, category: "Dairy" },
-  { id: "butter", name: "Butter", emoji: "dairy", emissionFactor: 11.9, category: "Dairy" },
+  // Lacteos
+  { id: "queso", name: "Queso", emoji: "dairy", emissionFactor: 13.5, category: "Dairy" },
+  { id: "leche", name: "Leche (1L)", emoji: "dairy", emissionFactor: 3.2, category: "Dairy" },
+  { id: "mantequilla", name: "Mantequilla", emoji: "dairy", emissionFactor: 11.9, category: "Dairy" },
   { id: "yogurt", name: "Yogurt", emoji: "dairy", emissionFactor: 2.2, category: "Dairy" },
-  { id: "eggs", name: "Eggs (dozen)", emoji: "eggs", emissionFactor: 4.8, category: "Dairy" },
+  { id: "huevos", name: "Huevos (docena)", emoji: "eggs", emissionFactor: 4.8, category: "Dairy" },
   
-  // Grains & Cereals
-  { id: "rice", name: "Rice", emoji: "grain", emissionFactor: 4.0, category: "Grains" },
+  // Granos y cereales
+  { id: "arroz", name: "Arroz", emoji: "grain", emissionFactor: 4.0, category: "Grains" },
   { id: "pasta", name: "Pasta", emoji: "grain", emissionFactor: 1.5, category: "Grains" },
-  { id: "bread", name: "Bread", emoji: "grain", emissionFactor: 1.4, category: "Grains" },
-  { id: "oats", name: "Oats", emoji: "grain", emissionFactor: 1.6, category: "Grains" },
+  { id: "pan", name: "Pan", emoji: "grain", emissionFactor: 1.4, category: "Grains" },
+  { id: "avena", name: "Avena", emoji: "grain", emissionFactor: 1.6, category: "Grains" },
   
-  // Legumes & Plant proteins
-  { id: "lentils", name: "Lentil Soup", emoji: "legume", emissionFactor: 0.9, category: "Legumes" },
-  { id: "beans", name: "Beans", emoji: "legume", emissionFactor: 0.8, category: "Legumes" },
+  // Legumbres y proteínas vegetales
+  { id: "lentejas", name: "Lentejas", emoji: "legume", emissionFactor: 0.9, category: "Legumes" },
+  { id: "frijoles", name: "Frijoles", emoji: "legume", emissionFactor: 0.8, category: "Legumes" },
   { id: "tofu", name: "Tofu", emoji: "plant", emissionFactor: 3.0, category: "Legumes" },
-  { id: "chickpeas", name: "Chickpeas", emoji: "legume", emissionFactor: 0.8, category: "Legumes" },
+  { id: "garbanzos", name: "Garbanzos", emoji: "legume", emissionFactor: 0.8, category: "Legumes" },
   
-  // Vegetables
-  { id: "tomatoes", name: "Tomatoes", emoji: "vegetable", emissionFactor: 1.4, category: "Vegetables" },
-  { id: "potatoes", name: "Potatoes", emoji: "vegetable", emissionFactor: 0.5, category: "Vegetables" },
-  { id: "broccoli", name: "Broccoli", emoji: "vegetable", emissionFactor: 0.5, category: "Vegetables" },
-  { id: "carrots", name: "Carrots", emoji: "vegetable", emissionFactor: 0.4, category: "Vegetables" },
-  { id: "salad", name: "Salad Mix", emoji: "vegetable", emissionFactor: 0.7, category: "Vegetables" },
+  // vegetales
+  { id: "tomates", name: "Tomates", emoji: "vegetable", emissionFactor: 1.4, category: "Vegetables" },
+  { id: "papa", name: "Papa", emoji: "vegetable", emissionFactor: 0.5, category: "Vegetables" },
+  { id: "brocoli", name: "Brocoli", emoji: "vegetable", emissionFactor: 0.5, category: "Vegetables" },
+  { id: "zanahorias", name: "Zanahorias", emoji: "vegetable", emissionFactor: 0.4, category: "Vegetables" },
+  { id: "ensalada", name: "Ensalada Mixta", emoji: "vegetable", emissionFactor: 0.7, category: "Vegetables" },
   
-  // Fruits
+  // frutas
   { id: "bananas", name: "Bananas", emoji: "fruit", emissionFactor: 0.7, category: "Fruits" },
-  { id: "apples", name: "Apples", emoji: "fruit", emissionFactor: 0.4, category: "Fruits" },
-  { id: "oranges", name: "Oranges", emoji: "fruit", emissionFactor: 0.5, category: "Fruits" },
-  { id: "avocado", name: "Avocado", emoji: "fruit", emissionFactor: 1.3, category: "Fruits" },
+  { id: "manzana", name: "Manzana", emoji: "fruit", emissionFactor: 0.4, category: "Fruits" },
+  { id: "naranjas", name: "Naranjas", emoji: "fruit", emissionFactor: 0.5, category: "Fruits" },
+  { id: "aguacate", name: "Aguacate", emoji: "fruit", emissionFactor: 1.3, category: "Fruits" },
   
-  // Beverages
-  { id: "coffee", name: "Coffee", emoji: "beverage", emissionFactor: 8.0, category: "Beverages" },
-  { id: "tea", name: "Tea", emoji: "beverage", emissionFactor: 1.2, category: "Beverages" },
-  { id: "orange-juice", name: "Orange Juice", emoji: "beverage", emissionFactor: 1.1, category: "Beverages" },
+  // Bebidas
+  { id: "cafe", name: "Cafe", emoji: "beverage", emissionFactor: 8.0, category: "Beverages" },
+  { id: "te", name: "Te", emoji: "beverage", emissionFactor: 1.2, category: "Beverages" },
+  { id: "jugo-naranja", name: "Jugo de Naranja", emoji: "beverage", emissionFactor: 1.1, category: "Beverages" },
   
-  // Processed
+  // procesados
   { id: "chocolate", name: "Chocolate", emoji: "snack", emissionFactor: 19.0, category: "Processed" },
   { id: "pizza", name: "Pizza", emoji: "prepared", emissionFactor: 5.0, category: "Processed" },
-  { id: "burger", name: "Burger", emoji: "prepared", emissionFactor: 14.0, category: "Processed" },
+  { id: "hamburguesa", name: "Hamburguesa", emoji: "prepared", emissionFactor: 14.0, category: "Processed" },
 ]
 
 export interface TransportMode {
   id: string
   name: string
   icon: string
-  emissionFactor: number // kg CO2e per km
+  emissionFactor: number // kg CO2e por km
   description: string
 }
 
-// Source: EPA, DEFRA 2023, IEA
+
 export const TRANSPORT_MODES: TransportMode[] = [
   { id: "car", name: "Car", icon: "car", emissionFactor: 0.192, description: "Average passenger car" },
   { id: "motor", name: "Motor", icon: "bike", emissionFactor: 0.113, description: "Motorcycle" },
