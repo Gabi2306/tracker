@@ -1,12 +1,12 @@
 "use client"
 
 import { usePathname, useRouter } from "next/navigation"
-import { Home, Clock, BarChart3, User } from "lucide-react"
+import { Home, Clock, Trophy, User } from "lucide-react"
 
 const NAV_ITEMS = [
   { label: "Inicio", icon: Home, path: "/dashboard" },
   { label: "Historial", icon: Clock, path: "/historial" },
-  { label: "Estadisticas", icon: BarChart3, path: "/estadisticas" },
+  { label: "Ranking", icon: Trophy, path: "/ranking" },
   { label: "Perfil", icon: User, path: "/perfil" },
 ]
 
