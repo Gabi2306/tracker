@@ -132,7 +132,12 @@ export default function DashboardPage() {
         <div className="mb-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-xs font-bold uppercase tracking-widest text-foreground">Actividad reciente</h2>
-            <button className="px-1 py-1 text-xs font-medium text-primary">Ver historial</button>
+            <button 
+              onClick={() => router.push("/historial")}
+              className="px-1 py-1 text-xs font-medium text-primary"
+            >
+              Ver historial
+            </button>
           </div>
           {recentActivities.length === 0 ? (
             <div className="rounded-2xl bg-card px-4 py-8 text-center">
@@ -160,6 +165,10 @@ export default function DashboardPage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-foreground">{activity.name}</p>
                     <p className="text-[11px] text-muted-foreground">
+                      {new Date(activity.timestamp).toLocaleDateString("es-ES", {
+                        day: "numeric",
+                        month: "short",
+                      })}{" "}
                       {new Date(activity.timestamp).toLocaleTimeString("es-ES", {
                         hour: "numeric",
                         minute: "2-digit",

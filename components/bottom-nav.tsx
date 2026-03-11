@@ -5,9 +5,9 @@ import { Home, Clock, BarChart3, User } from "lucide-react"
 
 const NAV_ITEMS = [
   { label: "Inicio", icon: Home, path: "/dashboard" },
-  { label: "Historial", icon: Clock, path: "/dashboard" },
-  { label: "Estadisticas", icon: BarChart3, path: "/dashboard" },
-  { label: "Perfil", icon: User, path: "/dashboard" },
+  { label: "Historial", icon: Clock, path: "/historial" },
+  { label: "Estadisticas", icon: BarChart3, path: "/estadisticas" },
+  { label: "Perfil", icon: User, path: "/perfil" },
 ]
 
 export function BottomNav() {
@@ -17,7 +17,7 @@ export function BottomNav() {
   return (
     <nav className="sticky bottom-0 flex items-center justify-around border-t border-border bg-card px-2 pb-6 pt-2" role="navigation" aria-label="Navegacion principal">
       {NAV_ITEMS.map((item) => {
-        const isActive = pathname === item.path && item.label === "Inicio"
+        const isActive = pathname === item.path
 
         return (
           <button
