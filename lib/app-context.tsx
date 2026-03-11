@@ -35,6 +35,8 @@ interface AppContextType {
   getWeeklyData: () => { day: string; emissions: number }[]
   getRecentActivities: () => ActivityEntry[]
   refreshActivities: () => Promise<void>
+  updateUserName: (newName: string) => Promise<{ success: boolean; error?: string }>
+  updatePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -275,6 +277,66 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [user, loadActivities])
 
+  const updateUserName = useCallback(async (newName: string): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: "No hay sesion activa" }
+    
+    try {
+      // Actualizar en la tabla profiles
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ name: newName })
+        .eq("id", user.id)
+
+      if (profileError) {
+        return { success: false, error: "No se pudo actualizar el nombre" }
+      }
+
+      // Actualizar metadata del usuario en auth
+      await supabase.auth.updateUser({
+        data: { name: newName }
+      })
+
+      // Actualizar estado local
+      setUser(prev => prev ? { ...prev, name: newName } : null)
+      
+      return { success: true }
+    } catch {
+      return { success: false, error: "Error de conexion. Intenta de nuevo." }
+    }
+  }, [user])
+
+  const updatePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: "No hay sesion activa" }
+    
+    try {
+      // Verificar contrasena actual intentando re-autenticar
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword
+      })
+
+      if (signInError) {
+        return { success: false, error: "La contrasena actual es incorrecta" }
+      }
+
+      // Actualizar contrasena
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword
+      })
+
+      if (updateError) {
+        if (updateError.message.includes("password")) {
+          return { success: false, error: "La nueva contrasena debe tener al menos 6 caracteres" }
+        }
+        return { success: false, error: "No se pudo actualizar la contrasena" }
+      }
+
+      return { success: true }
+    } catch {
+      return { success: false, error: "Error de conexion. Intenta de nuevo." }
+    }
+  }, [user])
+
   const getTodayEmissions = useCallback(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -351,6 +413,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         getWeeklyData,
         getRecentActivities,
         refreshActivities,
+        updateUserName,
+        updatePassword,
       }}
     >
       {children}
