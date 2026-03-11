@@ -1,12 +1,40 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useApp } from "@/lib/app-context"
 import { EmissionsRing } from "@/components/emissions-ring"
 import { WeeklyChart } from "@/components/weekly-chart"
 import { BottomNav } from "@/components/bottom-nav"
-import { Bell, Utensils, Bus, TrendingDown, ChevronRight, LogOut } from "lucide-react"
+import { Utensils, Bus, TrendingDown, ChevronRight, LogOut, Lightbulb, X } from "lucide-react"
+import { ENVIRONMENTAL_TIPS, type EnvironmentalTip } from "@/lib/environmental-tips"
+
+// Funcion para obtener tip basado en emisiones del dia
+function getTipForEmissions(emissions: number): EnvironmentalTip {
+  // Generar un seed basado en la fecha para que sea el mismo tip todo el dia
+  const today = new Date()
+  const dateSeed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate()
+  
+  let tips: EnvironmentalTip[]
+  
+  if (emissions === 0) {
+    // Sin actividades - tip general motivacional
+    tips = ENVIRONMENTAL_TIPS.filter(t => t.category === "general")
+  } else if (emissions < 3) {
+    // Bajo impacto - felicitar y tips de energia/agua
+    tips = ENVIRONMENTAL_TIPS.filter(t => t.category === "energy" || t.category === "water" || t.category === "general")
+  } else if (emissions < 8) {
+    // Impacto moderado - tips de comida y transporte
+    tips = ENVIRONMENTAL_TIPS.filter(t => t.category === "food" || t.category === "transport")
+  } else {
+    // Alto impacto - tips especificos de reduccion
+    tips = ENVIRONMENTAL_TIPS.filter(t => t.category === "food" || t.category === "transport" || t.category === "waste")
+  }
+  
+  // Usar el seed para seleccionar siempre el mismo tip del dia
+  const index = dateSeed % tips.length
+  return tips[index]
+}
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -20,6 +48,8 @@ export default function DashboardPage() {
     getRecentActivities,
   } = useApp()
 
+  const [showTip, setShowTip] = useState(true)
+
   useEffect(() => {
     if (!isLoggedIn) {
       router.replace("/")
@@ -32,6 +62,9 @@ export default function DashboardPage() {
   const yesterdayEmissions = getYesterdayEmissions()
   const weeklyData = getWeeklyData()
   const recentActivities = getRecentActivities()
+  
+  // Obtener tip del dia basado en emisiones
+  const dailyTip = useMemo(() => getTipForEmissions(todayEmissions), [todayEmissions])
 
   const percentChange = yesterdayEmissions > 0
     ? Math.round(((yesterdayEmissions - todayEmissions) / yesterdayEmissions) * 100)
@@ -58,9 +91,6 @@ export default function DashboardPage() {
               <p className="text-lg font-bold text-foreground">Hola, {user?.name ?? "Usuario"}</p>
             </div>
           </div>
-          <button className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-foreground" aria-label="Notificaciones">
-            <Bell className="h-5 w-5" />
-          </button>
           <button
             onClick={async () => {
               await logout()
@@ -87,6 +117,31 @@ export default function DashboardPage() {
             <p className="mt-1 text-xs text-muted-foreground">Registra tu primera actividad</p>
           )}
         </div>
+
+        {/* Tip ambiental del dia */}
+        {showTip && (
+          <div className="mb-6 rounded-2xl bg-accent/10 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/20">
+                  <Lightbulb className="h-5 w-5 text-accent" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-accent">Tip del dia</p>
+                  <p className="mt-1 text-sm font-medium text-foreground">{dailyTip.title}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{dailyTip.description}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowTip(false)}
+                className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                aria-label="Cerrar tip"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Registrar actividad */}
         <div className="mb-6">

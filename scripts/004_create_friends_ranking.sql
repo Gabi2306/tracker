@@ -1,4 +1,3 @@
--- Agregar codigo unico a cada usuario en profiles
 ALTER TABLE profiles 
 ADD COLUMN IF NOT EXISTS friend_code VARCHAR(8) UNIQUE;
 
@@ -17,7 +16,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Actualizar perfiles existentes con codigos unicos
 UPDATE profiles 
 SET friend_code = generate_friend_code() 
 WHERE friend_code IS NULL;
@@ -48,27 +46,21 @@ CREATE TABLE IF NOT EXISTS friendships (
   UNIQUE(user_id, friend_id)
 );
 
--- Indices para optimizar consultas
 CREATE INDEX IF NOT EXISTS idx_friendships_user_id ON friendships(user_id);
 CREATE INDEX IF NOT EXISTS idx_friendships_friend_id ON friendships(friend_id);
 CREATE INDEX IF NOT EXISTS idx_profiles_friend_code ON profiles(friend_code);
 
--- RLS para friendships
 ALTER TABLE friendships ENABLE ROW LEVEL SECURITY;
 
--- Politica: usuarios pueden ver sus propias amistades
 CREATE POLICY "Users can view own friendships" ON friendships
   FOR SELECT USING (auth.uid() = user_id OR auth.uid() = friend_id);
 
--- Politica: usuarios pueden agregar amigos
 CREATE POLICY "Users can add friends" ON friendships
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- Politica: usuarios pueden eliminar sus amistades
 CREATE POLICY "Users can delete own friendships" ON friendships
   FOR DELETE USING (auth.uid() = user_id);
 
--- Vista para ranking semanal (emisiones de la semana actual)
 CREATE OR REPLACE VIEW weekly_rankings AS
 SELECT 
   p.id,
@@ -83,5 +75,4 @@ LEFT JOIN activities a ON p.id = a.user_id
   AND a.created_at < date_trunc('week', CURRENT_TIMESTAMP) + INTERVAL '1 week'
 GROUP BY p.id, p.name, p.friend_code;
 
--- Permitir acceso a la vista
 GRANT SELECT ON weekly_rankings TO authenticated;

@@ -22,6 +22,6 @@ create policy "activities_update_own" on public.activities
 create policy "activities_delete_own" on public.activities
   for delete using (auth.uid() = user_id);
 
--- Index for fast queries by user and date
+-- 
 create index if not exists idx_activities_user_created
   on public.activities (user_id, created_at desc);

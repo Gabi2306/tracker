@@ -5,31 +5,14 @@ import { useRouter } from "next/navigation"
 import { useApp } from "@/lib/app-context"
 import { BottomNav } from "@/components/bottom-nav"
 import { 
-  Bell, BellOff, Clock, LogOut, Leaf, ChevronRight, 
-  User, Lock, Check, X, Eye, EyeOff, Pencil
+  LogOut, Leaf, ChevronRight, 
+  Lock, Check, X, Eye, EyeOff, Pencil
 } from "lucide-react"
-import { getRandomTip } from "@/lib/environmental-tips"
-
-interface NotificationSettings {
-  enabled: boolean
-  hour: number
-  minute: number
-}
 
 export default function PerfilPage() {
   const router = useRouter()
   const { user, isLoggedIn, logout, activities, updateUserName, updatePassword } = useApp()
   
-  // Estados para notificaciones
-  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
-    enabled: false,
-    hour: 9,
-    minute: 0,
-  })
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default")
-  const [showTimePicker, setShowTimePicker] = useState(false)
-  const [currentTip, setCurrentTip] = useState(getRandomTip())
-
   // Estados para edicion de nombre
   const [isEditingName, setIsEditingName] = useState(false)
   const [newName, setNewName] = useState("")
@@ -59,33 +42,6 @@ export default function PerfilPage() {
       setNewName(user.name)
     }
   }, [user])
-
-  // Cargar configuracion guardada y registrar service worker
-  useEffect(() => {
-    const saved = localStorage.getItem("notification-settings")
-    if (saved) {
-      try {
-        setNotificationSettings(JSON.parse(saved))
-      } catch {
-        // Ignorar errores de parsing
-      }
-    }
-
-    if (typeof window !== "undefined" && "Notification" in window) {
-      setNotificationPermission(Notification.permission)
-    }
-
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch((err) => {
-        console.error("Error registering service worker:", err)
-      })
-    }
-  }, [])
-
-  // Guardar configuracion
-  useEffect(() => {
-    localStorage.setItem("notification-settings", JSON.stringify(notificationSettings))
-  }, [notificationSettings])
 
   // Handlers de nombre
   const handleSaveName = async () => {
@@ -154,83 +110,6 @@ export default function PerfilPage() {
     setNewPassword("")
     setConfirmPassword("")
     setPasswordError("")
-  }
-
-  // Handlers de notificaciones
-  const requestNotificationPermission = async () => {
-    if (!("Notification" in window)) {
-      alert("Tu navegador no soporta notificaciones")
-      return false
-    }
-    const permission = await Notification.requestPermission()
-    setNotificationPermission(permission)
-    return permission === "granted"
-  }
-
-  const toggleNotifications = async () => {
-    if (!notificationSettings.enabled) {
-      const granted = await requestNotificationPermission()
-      if (granted) {
-        setNotificationSettings((prev) => ({ ...prev, enabled: true }))
-        scheduleNotification()
-      }
-    } else {
-      setNotificationSettings((prev) => ({ ...prev, enabled: false }))
-    }
-  }
-
-  const scheduleNotification = () => {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.ready.then((registration) => {
-        localStorage.setItem("notification-settings", JSON.stringify(notificationSettings))
-        if (registration.active) {
-          registration.active.postMessage({
-            type: "SCHEDULE_NOTIFICATION",
-            hour: notificationSettings.hour,
-            minute: notificationSettings.minute,
-          })
-        }
-      })
-    }
-  }
-
-  const updateTime = (hour: number, minute: number) => {
-    const newSettings = { ...notificationSettings, hour, minute }
-    setNotificationSettings(newSettings)
-    setShowTimePicker(false)
-    if (notificationSettings.enabled) {
-      localStorage.setItem("notification-settings", JSON.stringify(newSettings))
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.ready.then((registration) => {
-          if (registration.active) {
-            registration.active.postMessage({
-              type: "SCHEDULE_NOTIFICATION",
-              hour,
-              minute,
-            })
-          }
-        })
-      }
-    }
-  }
-
-  const sendTestNotification = () => {
-    if (notificationPermission === "granted") {
-      const tip = getRandomTip()
-      new Notification("Tip Ambiental del Dia", {
-        body: `${tip.title}: ${tip.description}`,
-        icon: "/icon-192.png",
-        badge: "/icon-192.png",
-        tag: "eco-tip",
-      })
-    }
-  }
-
-  const formatTime = (hour: number, minute: number) => {
-    const h = hour % 12 || 12
-    const m = minute.toString().padStart(2, "0")
-    const period = hour < 12 ? "AM" : "PM"
-    return `${h}:${m} ${period}`
   }
 
   // Estadisticas
@@ -451,147 +330,7 @@ export default function PerfilPage() {
           </div>
         </div>
 
-        {/* Configuracion de notificaciones */}
-        <div className="mb-6">
-          <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-foreground">Notificaciones</h2>
-          
-          <div className="rounded-2xl bg-card">
-            {/* Toggle de notificaciones */}
-            <div className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-                  notificationSettings.enabled ? "bg-accent/20 text-accent" : "bg-secondary text-muted-foreground"
-                }`}>
-                  {notificationSettings.enabled ? (
-                    <Bell className="h-5 w-5" />
-                  ) : (
-                    <BellOff className="h-5 w-5" />
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-foreground">Tips diarios</p>
-                  <p className="text-xs text-muted-foreground">
-                    {notificationSettings.enabled ? "Activas" : "Desactivadas"}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={toggleNotifications}
-                className={`relative h-7 w-12 rounded-full transition-colors ${
-                  notificationSettings.enabled ? "bg-accent" : "bg-secondary"
-                }`}
-                role="switch"
-                aria-checked={notificationSettings.enabled}
-              >
-                <span
-                  className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${
-                    notificationSettings.enabled ? "left-6" : "left-1"
-                  }`}
-                />
-              </button>
-            </div>
 
-            {/* Selector de hora */}
-            {notificationSettings.enabled && (
-              <>
-                <div className="border-t border-border" />
-                <button
-                  onClick={() => setShowTimePicker(!showTimePicker)}
-                  className="flex w-full items-center justify-between p-4"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20 text-primary">
-                      <Clock className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Hora de notificacion</p>
-                      <p className="text-xs text-muted-foreground">Recibiras un tip cada dia</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-primary">
-                      {formatTime(notificationSettings.hour, notificationSettings.minute)}
-                    </span>
-                    <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${showTimePicker ? "rotate-90" : ""}`} />
-                  </div>
-                </button>
-
-                {showTimePicker && (
-                  <>
-                    <div className="border-t border-border" />
-                    <div className="p-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <select
-                          value={notificationSettings.hour}
-                          onChange={(e) => updateTime(parseInt(e.target.value), notificationSettings.minute)}
-                          className="rounded-lg bg-secondary px-4 py-2 text-lg font-medium text-foreground"
-                        >
-                          {Array.from({ length: 24 }, (_, i) => (
-                            <option key={i} value={i}>
-                              {i.toString().padStart(2, "0")}
-                            </option>
-                          ))}
-                        </select>
-                        <span className="text-2xl font-bold text-foreground">:</span>
-                        <select
-                          value={notificationSettings.minute}
-                          onChange={(e) => updateTime(notificationSettings.hour, parseInt(e.target.value))}
-                          className="rounded-lg bg-secondary px-4 py-2 text-lg font-medium text-foreground"
-                        >
-                          {[0, 15, 30, 45].map((m) => (
-                            <option key={m} value={m}>
-                              {m.toString().padStart(2, "0")}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <p className="mt-3 text-center text-xs text-muted-foreground">
-                        Recibiras un tip ambiental a las {formatTime(notificationSettings.hour, notificationSettings.minute)}
-                      </p>
-                    </div>
-                  </>
-                )}
-
-                {/* Boton de prueba */}
-                <div className="border-t border-border" />
-                <button
-                  onClick={sendTestNotification}
-                  className="flex w-full items-center justify-between p-4"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/20 text-accent">
-                      <Leaf className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Enviar notificacion de prueba</p>
-                      <p className="text-xs text-muted-foreground">Verifica que funcione correctamente</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Tip del dia preview */}
-        <div className="mb-6">
-          <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-foreground">Tip del momento</h2>
-          <div className="rounded-2xl bg-card p-4">
-            <div className="mb-2 flex items-center gap-2">
-              <Leaf className="h-4 w-4 text-accent" />
-              <span className="text-xs font-medium uppercase text-accent">{currentTip.category}</span>
-            </div>
-            <p className="mb-1 text-sm font-semibold text-foreground">{currentTip.title}</p>
-            <p className="text-xs text-muted-foreground">{currentTip.description}</p>
-            <button
-              onClick={() => setCurrentTip(getRandomTip())}
-              className="mt-3 text-xs font-medium text-primary"
-            >
-              Ver otro tip
-            </button>
-          </div>
-        </div>
 
         {/* Cerrar sesion */}
         <button

@@ -54,14 +54,22 @@ export default function RankingPage() {
     setLoading(true)
     try {
       // Cargar perfil del usuario
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("id, full_name, friend_code")
+        .select("id, name, friend_code")
         .eq("id", user.id)
         .single()
 
+      if (profileError) {
+        console.error("Error loading profile:", profileError)
+      }
+
       if (profile) {
-        setUserProfile(profile)
+        setUserProfile({
+          id: profile.id,
+          full_name: profile.name || "Usuario",
+          friend_code: profile.friend_code || ""
+        })
       }
 
       // Cargar amigos
@@ -76,23 +84,61 @@ export default function RankingPage() {
         friendships.forEach(f => idsToQuery.push(f.friend_id))
       }
 
-      // Obtener datos de ranking
-      const { data: rankingData } = await supabase
-        .from("weekly_rankings")
-        .select("*")
+      // Calcular inicio de semana (lunes)
+      const now = new Date()
+      const startOfWeek = new Date(now)
+      const dayOfWeek = now.getDay()
+      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+      startOfWeek.setDate(now.getDate() + diffToMonday)
+      startOfWeek.setHours(0, 0, 0, 0)
+
+      // Obtener perfiles
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, name, friend_code")
         .in("id", idsToQuery)
 
-      if (rankingData) {
+      if (profilesError) {
+        console.error("Error loading profiles:", profilesError)
+      }
+
+      if (profilesData) {
+        // Obtener actividades de la semana para todos los usuarios
+        const { data: activitiesData, error: activitiesError } = await supabase
+          .from("activities")
+          .select("user_id, emissions, created_at")
+          .in("user_id", idsToQuery)
+          .gte("created_at", startOfWeek.toISOString())
+
+        if (activitiesError) {
+          console.error("Error loading activities:", activitiesError)
+        }
+
+        // Calcular emisiones por usuario
+        const emissionsByUser: Record<string, number> = {}
+        idsToQuery.forEach(id => { emissionsByUser[id] = 0 })
+        
+        if (activitiesData) {
+          activitiesData.forEach(activity => {
+            const userId = activity.user_id
+            const emissions = Number(activity.emissions) || 0
+            emissionsByUser[userId] = (emissionsByUser[userId] || 0) + emissions
+          })
+        }
+
+        const usersWithEmissions = profilesData.map(profile => ({
+          id: profile.id,
+          full_name: profile.name || "Usuario",
+          friend_code: profile.friend_code || "",
+          weekly_emissions: emissionsByUser[profile.id] || 0
+        }))
+
         // Ordenar por emisiones (menor a mayor)
-        const sorted = rankingData.sort((a, b) => 
-          Number(a.weekly_emissions) - Number(b.weekly_emissions)
-        )
+        const sorted = usersWithEmissions.sort((a, b) => a.weekly_emissions - b.weekly_emissions)
+        
         // Asignar ranking
         const ranked = sorted.map((f, index) => ({
-          id: f.id,
-          full_name: f.full_name || "Usuario",
-          friend_code: f.friend_code || "",
-          weekly_emissions: Number(f.weekly_emissions) || 0,
+          ...f,
           rank: index + 1
         }))
         setFriends(ranked)
@@ -113,14 +159,27 @@ export default function RankingPage() {
   }, [isLoggedIn, router, loadData])
 
   const copyFriendCode = async () => {
-    if (!userProfile?.friend_code) return
+    const code = userProfile?.friend_code
+    
+    if (!code || code === "--------") {
+      setError("No tienes un codigo de amigo asignado")
+      return
+    }
     
     try {
-      await navigator.clipboard.writeText(userProfile.friend_code)
+      await navigator.clipboard.writeText(code)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      setError("No se pudo copiar el codigo")
+      // Fallback para navegadores que no soportan clipboard API
+      const textArea = document.createElement("textarea")
+      textArea.value = code
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand("copy")
+      document.body.removeChild(textArea)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
     }
   }
 
@@ -132,61 +191,73 @@ export default function RankingPage() {
     setSuccess("")
 
     try {
-      // Buscar usuario por codigo
+      const codeToSearch = friendCode.toUpperCase().trim()
+      
+      // ✅ .maybeSingle() en lugar de .single() — no lanza error si no encuentra nada
       const { data: friendProfile, error: searchError } = await supabase
         .from("profiles")
-        .select("id, full_name, friend_code")
-        .eq("friend_code", friendCode.toUpperCase().trim())
-        .single()
+        .select("id, name, friend_code")
+        .eq("friend_code", codeToSearch)
+        .maybeSingle()
 
-      if (searchError || !friendProfile) {
-        setError("No se encontro ningun usuario con ese codigo")
-        setAddingFriend(false)
+      if (searchError) {
+        console.error("Search error:", searchError)
+        setError("Error al buscar el usuario. Intenta de nuevo.")
+        return
+      }
+
+      if (!friendProfile) {
+        setError("No se encontró ningún usuario con ese código")
         return
       }
 
       if (friendProfile.id === user.id) {
         setError("No puedes agregarte a ti mismo")
-        setAddingFriend(false)
         return
       }
 
       // Verificar si ya son amigos
-      const { data: existing } = await supabase
+      const { data: existing, error: existingError } = await supabase
         .from("friendships")
         .select("id")
         .eq("user_id", user.id)
         .eq("friend_id", friendProfile.id)
-        .single()
+        .maybeSingle()
+
+      if (existingError) {
+        console.error("Existing check error:", existingError)
+      }
 
       if (existing) {
         setError("Ya tienes a este usuario como amigo")
-        setAddingFriend(false)
         return
       }
 
-      // Agregar amistad (bidireccional)
+      // Agregar amistad
       const { error: insertError } = await supabase
         .from("friendships")
-        .insert([
-          { user_id: user.id, friend_id: friendProfile.id },
-          { user_id: friendProfile.id, friend_id: user.id }
-        ])
+        .insert({ user_id: user.id, friend_id: friendProfile.id })
 
       if (insertError) {
-        setError("Error al agregar amigo. Intenta de nuevo.")
-        setAddingFriend(false)
+        console.error("Insert error:", insertError)
+        if (insertError.code === "23505") {
+          setError("Ya tienes a este usuario como amigo")
+        } else {
+          // ✅ Muestra el mensaje real del error para facilitar debugging
+          setError(`Error al agregar amigo: ${insertError.message}`)
+        }
         return
       }
 
-      setSuccess(`Agregaste a ${friendProfile.full_name} como amigo`)
+      setSuccess(`¡Agregaste a ${friendProfile.name || "Usuario"} como amigo!`)
       setFriendCode("")
       setShowAddFriend(false)
-      loadData()
-    } catch {
-      setError("Error de conexion. Intenta de nuevo.")
+      await loadData() // ✅ Await para esperar la recarga
+    } catch (err) {
+      console.error("Unexpected error:", err)
+      setError("Error de conexión. Intenta de nuevo.")
     } finally {
-      setAddingFriend(false)
+      setAddingFriend(false) // ✅ Siempre se ejecuta, sin importar el flujo
     }
   }
 
@@ -373,7 +444,7 @@ export default function RankingPage() {
                         </p>
                         {isCurrentUser && (
                           <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-medium text-primary">
-                            Tu
+                            Tú
                           </span>
                         )}
                       </div>
